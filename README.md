@@ -1,118 +1,247 @@
-# RAG Customer Support Assistant
-### LangGraph + ChromaDB + Human-in-the-Loop (HITL)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![LangChain](https://img.shields.io/badge/LangChain-RAG-green)
+![LangGraph](https://img.shields.io/badge/LangGraph-Workflow-orange)
+![ChromaDB](https://img.shields.io/badge/VectorDB-Chroma-purple)
+![HuggingFace](https://img.shields.io/badge/Embeddings-HuggingFace-yellow)
+![Groq](https://img.shields.io/badge/LLM-Groq-red)
+![RAG](https://img.shields.io/badge/AI-RAG-critical)
+![HITL](https://img.shields.io/badge/System-HITL-blueviolet)
+
+
+# 🚀 RAG-Based Customer Support Assistant
+
+### (LangGraph + Human-in-the-Loop Escalation)
 
 ---
 
-## Project Structure
+## 📌 Overview
 
-```
-rag_support_assistant/
-├── main.py                # Entry point — CLI + interactive REPL
-├── rag_pipeline.py        # PDF loading, embedding, retrieval, LLM answering
-├── graph_workflow.py      # LangGraph nodes, edges, routing logic
-├── hitl.py                # Human-in-the-Loop escalation handler
-├── utils.py               # Logger, confidence heuristic, text cleaner
-├── create_sample_pdf.py   # One-time helper to create a demo PDF
-└── requirements.txt
+This project implements a **Retrieval-Augmented Generation (RAG)** based customer support assistant that answers user queries from a PDF knowledge base.
+
+The system uses:
+
+* Semantic search (embeddings + vector DB)
+* LLM-based answer generation
+* Graph-based workflow (LangGraph)
+* Human-in-the-Loop (HITL) escalation for uncertain queries
+
+---
+
+## 🎯 Key Features
+
+* 📄 Load and process PDF knowledge base
+* 🔍 Semantic retrieval using embeddings
+* 🤖 Context-aware answer generation (LLM)
+* 🔀 Conditional routing using LangGraph
+* 🚨 Human-in-the-loop escalation for low confidence
+* 💻 CLI-based interactive interface
+
+---
+
+## 🧠 How It Works
+
+```text
+User Query
+   ↓
+LangGraph Workflow
+   ↓
+Retrieve Relevant Chunks (ChromaDB)
+   ↓
+Generate Answer (LLM)
+   ↓
+Confidence Check
+   ↓
+ ┌───────────────┬───────────────┐
+ ↓               ↓
+Answer       Escalation (HITL)
 ```
 
 ---
 
-## Setup
+## 🏗️ Project Structure
+
+```text
+Rag_Support_Assistant/
+│
+├── main.py                # Entry point
+├── rag_pipeline.py        # RAG logic (retrieval + generation)
+├── graph_workflow.py      # LangGraph workflow (routing logic)
+├── hitl.py                # Human escalation logic
+├── utils.py               # Helper functions (logging, etc.)
+│
+├── knowledge_base.pdf     # Sample knowledge base
+├── create_sample_pdf.py   # Script to generate sample PDF
+│
+├── chroma_db/             # Vector database (auto-generated)
+├── requirements.txt       # Dependencies
+└── README.md              # Project documentation
+```
+
+---
+
+## ⚙️ Tech Stack
+
+* Python
+* LangChain
+* LangGraph
+* ChromaDB
+* HuggingFace Embeddings
+* Groq LLM
+
+---
+
+## 🚀 Setup & Installation
+
+### 1. Clone the repository
 
 ```bash
-# 1. Install dependencies
+git clone <your-repo-link>
+cd Rag_Support_Assistant
+```
+
+---
+
+### 2. Create virtual environment
+
+```bash
+python -m venv venv
+venv\Scripts\activate   # Windows
+```
+
+---
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
-pip install fpdf2          # only needed for the sample PDF generator
-
-# 2. Set your OpenAI API key
-export OPENAI_API_KEY="sk-..."
-
-# 3. Generate the sample knowledge-base PDF  (skip if you have your own)
-python create_sample_pdf.py
-
-# 4. Index the PDF into ChromaDB
-python main.py --build
-
-# 5. Ask questions interactively
-python main.py
-
-# OR run a single query
-python main.py --query "How do I return a product?"
 ```
 
 ---
 
-## LangGraph Workflow
-
-```
-[START]
-   │
-   ▼
-processing_node   ← retrieval + LLM answer generation
-   │
-   ▼
-decision_node     ← checks confidence & escalation_flag
-   │
-   ├── "escalate" ──► escalation_node  ← HITL handler
-   │                        │
-   └── "output"  ──► output_node  ◄────┘
-                        │
-                      [END]
-```
-
-### Escalation triggers
-| Condition | What happens |
-|-----------|--------------|
-| No documents found | `escalation_flag = True` immediately |
-| Best similarity score < 0.30 | `escalation_flag = True` |
-| LLM confidence < 0.50 | `escalation_flag = True` after decision node |
-| All checks pass | Answer returned directly |
-
----
-
-## State Object
-
-```python
-{
-    "query"            : str,    # user's question
-    "retrieved_docs"   : list,   # LangChain Document chunks
-    "answer"           : str,    # LLM or human answer
-    "confidence"       : float,  # 0.0 → 1.0 heuristic score
-    "escalation_flag"  : bool,   # True if escalated
-    "escalation_reason": str,    # why it was escalated
-}
-```
-
----
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_API_KEY` | — | **Required.** Your OpenAI key |
-| `PDF_PATH` | `knowledge_base.pdf` | Path to your PDF |
-| `CHROMA_PERSIST_DIR` | `./chroma_db` | ChromaDB storage dir |
-| `LLM_MODEL` | `gpt-4o-mini` | OpenAI chat model |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | OpenAI embedding model |
-| `TOP_K` | `4` | Chunks to retrieve per query |
-| `SIM_THRESHOLD` | `0.30` | Minimum similarity score |
-
----
-
-## Using a Free/Local LLM (no OpenAI cost)
-
-Swap the OpenAI classes in `rag_pipeline.py` for Ollama:
+### 4. Set API Key (Groq)
 
 ```bash
-pip install langchain-ollama
-ollama pull mistral
+set GROQ_API_KEY=your_api_key_here
 ```
+
+---
+
+## 📄 Generate Sample PDF (Optional)
+
+```bash
+python create_sample_pdf.py
+```
+
+---
+
+## 🧱 Build Vector Store
+
+```bash
+python main.py --build
+```
+
+---
+
+## ▶️ Run the Application
+
+```bash
+python main.py
+```
+
+---
+
+## 🧪 Example Queries
+
+### ✅ Relevant Query
+
+```text
+How do I return a product?
+```
+
+✔ System retrieves correct answer
+
+---
+
+### 🔄 Paraphrased Query
+
+```text
+How can I send back a product?
+```
+
+✔ Semantic retrieval works
+
+---
+
+### ❌ Irrelevant Query
+
+```text
+What is AI?
+```
+
+🚨 Escalation triggered (HITL)
+
+---
+
+## 🔀 Conditional Routing Logic
+
+The system decides between answering and escalation based on:
+
+* Confidence score (similarity threshold)
+* Detection of uncertain responses (e.g., "I don't know")
 
 ```python
-# rag_pipeline.py — replace OpenAI imports with:
-from langchain_ollama import OllamaEmbeddings, ChatOllama
-
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
-llm        = ChatOllama(model="mistral", temperature=0)
+if confidence < threshold or "i don't know" in answer.lower():
+    escalate = True
 ```
+
+---
+
+## 🚨 Human-in-the-Loop (HITL)
+
+* Triggered when system is not confident
+* Simulated using predefined response
+* Ensures reliability of system
+
+---
+
+## ⚠️ Limitations
+
+* Supports only single PDF
+* CLI-based (no UI)
+* No real human integration (simulated HITL)
+* No conversation memory
+
+---
+
+## 🔮 Future Improvements
+
+* Multi-document support
+* Streamlit/Web UI
+* Chat history (memory)
+* Real-time human escalation
+* Cloud deployment
+
+---
+
+## 🧠 Key Learnings
+
+* RAG pipeline design
+* Vector databases and embeddings
+* LangGraph workflow orchestration
+* Conditional routing logic
+* Human-in-the-loop system design
+
+---
+
+## 📌 Conclusion
+
+This project demonstrates a complete **RAG-based system** with retrieval, generation, decision-making, and escalation. It combines practical implementation with system design concepts, making it suitable for real-world customer support automation.
+
+---
+
+## 🙌 Author
+
+**Sai B**
+CSE Graduate | Data Science Enthusiast
+
+---
